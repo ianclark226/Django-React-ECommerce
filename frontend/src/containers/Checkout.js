@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, Fragment } from "react";
 import Layout from "../components/Layout";
+import DropIn from 'braintree-web-drop-in-react';
+import Loader from 'react-loader-spinner';
+import axios from 'axios';
+import { Navigate } from 'react-router-dom';
 
 const Checkout = () => {
   const [formData, setFormData] = useState({
@@ -12,9 +16,39 @@ const Checkout = () => {
     zipcode: "",
   });
 
+  const [clientToken, setClientToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [processingOrder, setProcessingOrder] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [data, setData] = useState({
+      instance: {}
+  });
+
   const [orderAttempted, setOrderAttempted] = useState(false);
 
   const { first_name, email, street, city, country, state, zipcode } = formData;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const config = {
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+      try {
+        const res = await axios.get('http://localhost:8000/api/payment/generate-token', config);
+
+        if (res.status === 200) {
+          setClientToken(res.data.token);
+          setLoading(false);
+          setProcessingOrder(false)
+        }
+      } catch(err) {
+
+      }
+    }
+    fetchData();
+  }, [])
 
   const onChange = (e) =>
     setFormData({
@@ -32,6 +66,12 @@ const Checkout = () => {
   const buy = (e) => {
     e.preventDefault();
   };
+
+  if (success) 
+    return 
+      <Navigate to='/thank-you' />;
+    
+  
 
   return (
     <Layout title="Checkout" content="">
@@ -162,13 +202,58 @@ const Checkout = () => {
               </div>
             </div>
             <h3 className="mb-5 display-6">Payment Information</h3>
-            <button
+            {
+                loading || clientToken === null ? (
+                    <div className="d-flex justify-content-center align-items-center mt-5 mb-5">
+                        <Loader 
+                        type="Ovel"
+                        color="#08bfff"
+                        width={50}
+                        height={50}
+                        />
+                        </div>
+                ) : (
+                    <DropIn
+                        options={{
+                            authorization: clientToken,
+                            paypal: {
+                              flow: 'vault'
+                            }
+                        }}
+                        onInstance={ instance => setData({ instance: instance })}
+                        />
+                )
+            }
+            {
+              processingOrder ? (
+                <div className="d-flex justify-content-center align-items-center mt-5 mb-5">
+                <Loader 
+                        type="Ovel"
+                        color="#08bfff"
+                        width={50}
+                        height={50}
+                        />
+                        </div>
+              ) : (
+                <div>
+                  {
+                    loading ? (
+                      <Fragment></Fragment>
+                    ) : (
+                      <button
               className="btn btn-success btn-lg mt-5 shadow"
               onClick={() => setOrderAttempted(true)}
               type="submit"
             >
               Place Order
             </button>
+                    )
+                  }
+                </div>
+              )
+            }
+           
+            
           </form>
         </div>
         <div className="offset-1 col-6">Order Details</div>

@@ -57,7 +57,7 @@ ROOT_URLCONF = 'mini_shop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'build')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,7 +135,7 @@ BT_PUBLIC_KEY = 'bmf65566fjq35cmd'
 BT_PRIVATE_KEY = '145fbc73d226daf8c7da86316b508430'
 
 CORS_ALLOWED_ORIGINS = [
-    'http//:localhost:3000',
+    'http://localhost:3000',
 ]
 
 # Default primary key field type
