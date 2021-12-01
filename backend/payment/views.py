@@ -3,7 +3,7 @@ import braintree
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Customer
+from .models import Customer, Address
 
 gateway = braintree.BraintreeGateway(
     braintree.Configuration(
@@ -99,8 +99,99 @@ class ProcessPaymentView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
+            if Address.objects.filter(
+                customer=customer,
+                street=street,
+                city=city,
+                country=country_name,
+                state=state,
+                zipcode=zipcode
+            ).exists():
+                address = Address.objects.get(
+                    customer=customer,
+                    street=street,
+                    city=city,
+                    country=country_name,
+                    state=state,
+                    zipcode=zipcode
+                )
+
+                address_id=address.address_id
+
+                try:
+                    result = gateway.address.find(customer_id, address_id)
+                except:
+                    result = gateway.address.create({
+                        'customer_id': customer_id,
+                        'first_name': first_name,
+                        'street_address': street,
+                        'locality': city,
+                        'region': state,
+                        'postal_code': zipcode,
+                        'country_name': country_name, 
+                        'country_code_alpha2': country_code
+                    })
+
+                    if result.is_success:
+                        address_id = str(result.address.id)
+
+                        Address.objects.filter(
+                            customer=customer,
+                            street=street,
+                            city=city,
+                            country=country_name,
+                            state=state,
+                            zipcode=zipcode
+                        ).update(address_id=address_id)
+
+                        
+                    else:  
+                        return Response(
+                            {'error': 'address invalid'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+            else:
+                result = gateway.address.create({
+                    'customer_id': customer_id,
+                    'first_name': first_name,
+                    'street_address': street,
+                    'locality': city,
+                    'region': state,
+                    'postal_code': zipcode,
+                    'country_name': country_name, 
+                    'country_code_alpha2': country_code
+                })
+
+                if result.is_success:
+                    address_id = str(result.address.id)
+
+                    Address.objects.create(
+                        customer=customer,
+                        address_id=address_id,
+                        street=street,
+                        city=city,
+                        country=country_name,
+                        state=state,
+                        zipcode=zipcode
+                    )
+
+                    address = Address.objects.get(
+                        customer=customer,
+                        address_id=address_id,
+                        street=street,
+                        city=city,
+                        country=country_name,
+                        state=state,
+                        zipcode=zipcode
+                    )
+                else:
+                    return Response(
+                        {'error': 'Failed to create address'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
             return Response(
-                {'success': 'Created customer successfully'},
+                {'success': 'Created customer and address successfully'},
                 status=status.HTTP_201_CREATED
             )
 

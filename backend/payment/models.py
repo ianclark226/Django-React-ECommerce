@@ -7,4 +7,16 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.email
+
+class Address(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    address_id = models.CharField(max_length=2)
+    street = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    state = models.CharField(max_length=255)
+    zipcode = models.CharField(max_length=9) 
+
+    def __str__(self):
+        return self.address_id
     
