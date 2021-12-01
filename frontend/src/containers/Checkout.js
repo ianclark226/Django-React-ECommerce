@@ -63,14 +63,58 @@ const Checkout = () => {
     ? "needs-validation was-validated"
     : "needs-validation";
 
-  const buy = (e) => {
-    e.preventDefault();
+    const buy = async e => {
+      e.preventDefault();
+
+      if (
+          first_name !== '' &&
+          email !== '' &&
+          street !== '' &&
+          city !== '' &&
+          country !== '' &&
+          state !== '' &&
+          zipcode !== ''
+      ) {
+          const config = {
+              headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+              }
+          };
+
+          let { nonce } = await data.instance.requestPaymentMethod();
+
+          setProcessingOrder(true);
+
+          const body = JSON.stringify({
+              first_name,
+              email,
+              street,
+              city,
+              country,
+              state,
+              zipcode,
+              nonce
+          });
+
+          try {
+              const res = await axios.post('http://localhost:8000/api/payment/process-payment', body, config);
+
+              if (res.status === 201) {
+                   setSuccess(true);
+              }
+          } catch(err) {
+
+          }
+
+          setProcessingOrder(false);
+      }
   };
 
   if (success) 
-    return 
-      <Navigate to='/thank-you' />;
-    
+    return (
+      <Navigate to='/thank-you' />
+    )
   
 
   return (
