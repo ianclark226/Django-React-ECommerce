@@ -3,7 +3,7 @@ import braintree
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Customer, Address
+from .models import Customer, Address, PaymentMethod, Order
 
 gateway = braintree.BraintreeGateway(
     braintree.Configuration(
@@ -190,10 +190,63 @@ class ProcessPaymentView(APIView):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-            return Response(
-                {'success': 'Created customer and address successfully'},
+            result = gateway.payment_method.create({
+                'customer_id': str(customer_id),
+                'billing_address_id': address_id,
+                'payment_method_nonce': nonce
+            })
+
+            if result.is_success:
+                token = str(result.payment_method.token)
+
+                PaymentMethod.objects.create(
+                    customer=customer,
+                    billing_address=address,
+                    token=token
+                )
+
+                payment_method = PaymentMethod.objects.get(
+                    customer=customer,
+                    billing_address=address,
+                    token=token
+                )
+            else:
+                return Response(
+                    {'error': 'Failed to create payment method'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            result = gateway.transaction.sale({
+                'customer_id': str(customer_id),
+                'amount': total_amount,
+                'payment_method_token': token,
+                'billing_address_id': address_id,
+                'shipping_address_id': address_id,
+                'options': {
+                    'submit_for_settlement': True
+                }
+            })
+
+            if result.is_success:
+                transaction_id = str(result.transaction.id)
+
+                Order.objects.create(
+                    transaction_id=transaction_id,
+                    customer=customer,
+                    address=address,
+                    payment_method=payment_method
+                )
+
+                return Response(
+                {'success': 'Transaction successfully'},
                 status=status.HTTP_201_CREATED
             )
+
+            else:
+                return Response(
+                    {'error': 'failed to process transaction'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
 
         except Exception as e:
             print(e)

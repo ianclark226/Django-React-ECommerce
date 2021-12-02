@@ -4,6 +4,7 @@ import DropIn from 'braintree-web-drop-in-react';
 import Loader from 'react-loader-spinner';
 import axios from 'axios';
 import { Navigate } from 'react-router-dom';
+import Game from '../assets/images/91vyVfjkQzS._SY550_.jpg';
 
 const Checkout = () => {
   const [formData, setFormData] = useState({
@@ -300,7 +301,26 @@ const Checkout = () => {
             
           </form>
         </div>
-        <div className="offset-1 col-6">Order Details</div>
+        <div className="offset-1 col-6">
+          <h3 className="display-6 mb-5">Order Details:</h3>
+          <div className="row">
+            <div className="col-4">
+              <img 
+              className="img-fluid"
+              src={Game}
+              alt="Mini Shop Game"
+              />
+            </div>
+            <div className="offset-1 col-7 mt-3">
+              <p className="fs-5 lead">
+                Order Item: Mini Shop Game
+              </p>
+              <p className="lead fs-3">
+                <strong>Order Total: (CAD) $47.99</strong>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );
